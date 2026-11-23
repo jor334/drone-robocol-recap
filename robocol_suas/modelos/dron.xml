@@ -1,0 +1,202 @@
+<!--
+  Quadcopter de Robocol para MuJoCo, reconstruido a partir de las fotos del dron real y de su CAD.
+
+  Convenciones de MuJoCo (las de siempre en robótica):
+    mundo ENU: x = Este, y = Norte, z = Arriba
+    cuerpo FLU: x = adelante, y = izquierda, z = arriba
+  ArduPilot usa otras (NED y FRD); el puente (sim/marcos.py) hace la conversión.
+
+  El dron empieza mirando al NORTE (girado 90° sobre z), así ArduPilot arranca con rumbo 0°.
+
+  Cómo es (de las fotos):
+    - Quad en X de 1000 mm de motor a motor (dato del equipo): cada motor a 0.5 m del centro,
+      es decir a 0.3536 m en x y en y.
+    - 4 brazos de tubo redondo de fibra de carbono que salen por el centro de las caras de una caja central
+      (girada 45° respecto al frente).
+    - Caja central de dos pisos: placas de carbono unidas por piezas con corazones recortados; arriba, 4 varillas.
+    - Motores T-Motor MN4014-11 KV330 (de los archivos del CAD). El CAD tiene una propuesta de patas tipo patín,
+      pero en la foto el dron no las lleva: aquí no están.
+    - Al final de cada brazo, un soporte negro con el motor encima y una hélice bipala grande.
+    - No tiene patas: se apoya en la placa de abajo de la caja.
+
+  ESTIMADO (falta confirmarlo con el equipo; el origen de cada valor está en su comentario):
+    - Medidas de la caja, del tubo y de las hélices: sacadas de las proporciones de la foto.
+    - Masas: típicas de cada pieza para un dron de carbono de este tamaño. Total ≈ 4.5 kg.
+    - Hélices 16x5.4 (proporciones de la foto). Con ellas, en 6S, el MN4014 KV330 da 2600 g = 25.5 N al 100 %
+      (tabla de pruebas de T-Motor). Con hélices 15x5 serían 1920 g = 18.8 N.
+  Al cambiar la masa o el empuje hay que actualizar MOT_THST_HOVER en params/robocol_quad.parm.
+
+  Motores en X, numerados como ArduPilot (vista desde arriba):
+
+          adelante
+       3 (CW)   1 (CCW)
+            \  /
+             ><
+            /  \
+       2 (CCW)  4 (CW)
+-->
+<mujoco model="dron">
+  <compiler angle="degree"/>
+
+  <!-- Sin aire en MuJoCo (density = 0): el arrastre del dron y el viento los calcula el puente
+       (sim/perturbaciones.py), con coeficientes de un dron de este tamaño y viento con ráfagas. -->
+  <option timestep="0.0025" gravity="0 0 -9.81"/>
+
+  <!-- Tamaño de referencia del mundo, fijo: MuJoCo mide con él los planos de corte y la zona de sombras.
+       Si no se fija, lo calcula de los objetos (y cambia cada vez que se agrega algo al campo). -->
+  <statistic extent="500"/>
+
+  <visual>
+    <!-- Tamaño máximo de imagen que se puede renderizar sin pantalla (la cámara usa 1280×960 por defecto) -->
+    <global offwidth="1920" offheight="1440"/>
+    <!-- Luz: ambiente + "linterna" de la cámara (headlight) + sol suman ~1 sobre una superficie horizontal.
+         Así la foto aérea del suelo (que ya trae su propia luz del sol) se ve con sus colores reales, y los objetos
+         3D (maniquí, tienda) no salen blancos de lo sobreexpuestos: importa para la detección con YOLO.
+         A la sombra solo queda ambiente + linterna (0.5): la mitad de luz, como una sombra real a media mañana. -->
+    <headlight ambient="0.35 0.35 0.35" diffuse="0.15 0.15 0.15" specular="0 0 0"/>
+    <!-- Planos de corte de la cámara, relativos a extent (500 m): se ve desde 5 cm hasta 5 km.
+         shadowclip: el mapa de sombras cubre un cuadrado de ±70 m (0.14 × 500) alrededor del dron
+         (sim/camara.py mueve el sol con el dron). Con 4096 píxeles, cada píxel de sombra mide 3.4 cm.
+         Con sombras, cada foto tarda ~80 ms en vez de ~35 ms: por eso la cámara va en su propio hilo. -->
+    <!-- fogstart/fogend: la neblina empieza a 250 m y tapa todo a 2.5 km; zfar = 20 km (esconde el borde del suelo en el horizonte).
+         Solo se ve en el visor 3D (visor_3d.py la activa); la cámara del dron mira hacia abajo, a menos de 150 m. -->
+    <map znear="0.0001" zfar="40" shadowclip="0.14" fogstart="0.5" fogend="5"/>
+    <rgba fog="0.80 0.85 0.90 1" haze="0.82 0.87 0.92 1"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <asset>
+    <!-- Cielo: degradado de azul (arriba) a blanco azulado (horizonte). Solo lo ve el visor 3D. -->
+    <texture name="cielo" type="skybox" builtin="gradient" rgb1="0.38 0.58 0.85" rgb2="0.86 0.90 0.95"
+             width="512" height="3072"/>
+    <material name="carbono" rgba="0.08 0.08 0.09 1" specular="0.4" shininess="0.6"/>
+    <material name="soporte" rgba="0.05 0.05 0.05 1"/>
+    <material name="motor" rgba="0.30 0.30 0.33 1" specular="0.6"/>
+    <material name="metal" rgba="0.75 0.75 0.78 1" specular="0.8"/>
+    <material name="etiqueta" rgba="0.92 0.92 0.92 1"/>
+    <material name="nariz" rgba="0.85 0.1 0.1 1"/>
+    <material name="interno" rgba="0.12 0.12 0.13 1"/>
+  </asset>
+
+  <default>
+    <!-- Piezas que solo se ven (y pesan), pero no chocan con nada: hélices, etiquetas, piezas internas -->
+    <default class="visual">
+      <geom contype="0" conaffinity="0"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <!-- El suelo, el sol y los blancos no están aquí: los agrega campo/escena.py (datos/escena.xml incluye este
+         archivo y les suma el campo). El origen del mundo es el home del campo. -->
+
+    <!-- El origen del dron está en el centro del piso de arriba de la caja, a la altura de los brazos.
+         La placa de abajo queda 0.1265 m más abajo: con z = 0.128 el dron empieza apoyado en el suelo. -->
+    <body name="dron" pos="0 0 0.128" euler="0 0 90">
+      <freejoint name="dron"/>
+      <!-- Aquí va la Pixhawk: de este punto salen giroscopio, acelerómetro, posición y velocidad -->
+      <site name="imu"/>
+
+      <!-- La caja va girada 45°: en el CAD los brazos salen por el CENTRO de cada cara, y como el dron
+           vuela en X (el frente queda entre dos brazos), una esquina de la caja apunta hacia adelante.
+           Es un cuerpo hijo sin articulación: va pegado al dron como si fuera la misma pieza. -->
+      <body name="caja" euler="0 0 45">
+        <!-- ===== Caja central: dos pisos de placas de carbono (22 × 22 cm; la de abajo, 26 × 22 cm) ===== -->
+        <geom name="placa_arriba" type="box" pos="0 0  0.035" size="0.11 0.11 0.0015" mass="0.08" material="carbono"/>
+        <geom name="placa_medio"  type="box" pos="0 0 -0.035" size="0.11 0.11 0.0015" mass="0.08" material="carbono"/>
+        <geom name="placa_abajo"  type="box" pos="0 0 -0.125" size="0.13 0.11 0.0015" mass="0.10" material="carbono"/>
+        <!-- Paneles laterales: piso de arriba (7 cm de alto) -->
+        <geom type="box" pos=" 0.1085 0 0" size="0.0015 0.05 0.035" mass="0.03" material="carbono"/>
+        <geom type="box" pos="-0.1085 0 0" size="0.0015 0.05 0.035" mass="0.03" material="carbono"/>
+        <geom type="box" pos="0  0.1085 0" size="0.05 0.0015 0.035" mass="0.03" material="carbono"/>
+        <geom type="box" pos="0 -0.1085 0" size="0.05 0.0015 0.035" mass="0.03" material="carbono"/>
+        <!-- Paneles laterales: piso de abajo (9 cm de alto) -->
+        <geom type="box" pos=" 0.1085 0 -0.08" size="0.0015 0.06 0.045" mass="0.03" material="carbono"/>
+        <geom type="box" pos="-0.1085 0 -0.08" size="0.0015 0.06 0.045" mass="0.03" material="carbono"/>
+        <geom type="box" pos="0  0.1085 -0.08" size="0.06 0.0015 0.045" mass="0.03" material="carbono"/>
+        <geom type="box" pos="0 -0.1085 -0.08" size="0.06 0.0015 0.045" mass="0.03" material="carbono"/>
+        <!-- Varillas roscadas que sobresalen de la placa de arriba (se ven en la foto) -->
+        <geom class="visual" type="cylinder" fromto=" 0.095  0.095 0.035  0.095  0.095 0.085" size="0.003" mass="0.01" material="metal"/>
+        <geom class="visual" type="cylinder" fromto=" 0.095 -0.095 0.035  0.095 -0.095 0.085" size="0.003" mass="0.01" material="metal"/>
+        <geom class="visual" type="cylinder" fromto="-0.095  0.095 0.035 -0.095  0.095 0.085" size="0.003" mass="0.01" material="metal"/>
+        <geom class="visual" type="cylinder" fromto="-0.095 -0.095 0.035 -0.095 -0.095 0.085" size="0.003" mass="0.01" material="metal"/>
+
+        <!-- ===== Lo que va dentro de la caja: casi toda la masa. No se ve (está tapado) ni choca ===== -->
+        <!-- Piso de arriba: Pixhawk, GPS, radio, computadora a bordo, cámara -->
+        <geom name="electronica" class="visual" type="box" pos="0 0 0" size="0.06 0.06 0.015" mass="0.5" material="interno"/>
+        <!-- Piso de abajo: batería (6S de ~10000 mAh, unos 1.3 kg) -->
+        <geom name="bateria" class="visual" type="box" pos="0 0 -0.08" size="0.08 0.045 0.03" mass="1.3" material="interno"/>
+        <!-- Cargas de SUAS 2026 (botella 255 g + baliza 155 g) y su mecanismo de lanzamiento -->
+        <geom name="cargas" class="visual" type="box" pos="0 0 -0.115" size="0.06 0.04 0.008" mass="0.56" material="interno"/>
+      </body>
+
+      <!-- Marca roja en el frente (el dron real no la tiene: es para ver hacia dónde mira) -->
+      <geom class="visual" type="box" pos="0.14 0 0.037" size="0.012 0.02 0.002" mass="0" material="nariz"/>
+
+      <!-- ===== Brazos: tubo de carbono de 25 mm, desde dentro de la caja hasta el soporte del motor ===== -->
+      <geom type="cylinder" fromto=" 0.07 -0.07 0   0.3536 -0.3536 0" size="0.0125" mass="0.09" material="carbono"/>
+      <geom type="cylinder" fromto="-0.07  0.07 0  -0.3536  0.3536 0" size="0.0125" mass="0.09" material="carbono"/>
+      <geom type="cylinder" fromto=" 0.07  0.07 0   0.3536  0.3536 0" size="0.0125" mass="0.09" material="carbono"/>
+      <geom type="cylinder" fromto="-0.07 -0.07 0  -0.3536 -0.3536 0" size="0.0125" mass="0.09" material="carbono"/>
+      <!-- Etiquetas blancas cerca de la caja (se ven en la foto) -->
+      <geom class="visual" type="cylinder" fromto=" 0.131 -0.131 0  0.152 -0.152 0" size="0.0135" mass="0" material="etiqueta"/>
+      <geom class="visual" type="cylinder" fromto="-0.131  0.131 0 -0.152  0.152 0" size="0.0135" mass="0" material="etiqueta"/>
+      <geom class="visual" type="cylinder" fromto=" 0.131  0.131 0  0.152  0.152 0" size="0.0135" mass="0" material="etiqueta"/>
+      <geom class="visual" type="cylinder" fromto="-0.131 -0.131 0 -0.152 -0.152 0" size="0.0135" mass="0" material="etiqueta"/>
+
+      <!-- ===== Soporte (con el ESC), motor y hélice al final de cada brazo =====
+           Motor MN4014 (46 mm de diámetro, 171 g con cables). Hélices bipala de 16" (0.406 m), estimadas de la foto. Están quietas: solo se dibujan. -->
+      <!-- Motor 1: adelante-derecha -->
+      <geom type="box" pos=" 0.3536 -0.3536 0" euler="0 0 -45" size="0.035 0.022 0.02" mass="0.11" material="soporte"/>
+      <geom type="cylinder" pos=" 0.3536 -0.3536 0.037" size="0.023 0.017" mass="0.171" material="motor"/>
+      <geom class="visual" type="box" pos=" 0.3536 -0.3536 0.057" euler="0 0 20" size="0.203 0.017 0.0015" mass="0.04" material="carbono"/>
+      <!-- Motor 2: atrás-izquierda -->
+      <geom type="box" pos="-0.3536  0.3536 0" euler="0 0 135" size="0.035 0.022 0.02" mass="0.11" material="soporte"/>
+      <geom type="cylinder" pos="-0.3536  0.3536 0.037" size="0.023 0.017" mass="0.171" material="motor"/>
+      <geom class="visual" type="box" pos="-0.3536  0.3536 0.057" euler="0 0 -35" size="0.203 0.017 0.0015" mass="0.04" material="carbono"/>
+      <!-- Motor 3: adelante-izquierda -->
+      <geom type="box" pos=" 0.3536  0.3536 0" euler="0 0 45" size="0.035 0.022 0.02" mass="0.11" material="soporte"/>
+      <geom type="cylinder" pos=" 0.3536  0.3536 0.037" size="0.023 0.017" mass="0.171" material="motor"/>
+      <geom class="visual" type="box" pos=" 0.3536  0.3536 0.057" euler="0 0 75" size="0.203 0.017 0.0015" mass="0.04" material="carbono"/>
+      <!-- Motor 4: atrás-derecha -->
+      <geom type="box" pos="-0.3536 -0.3536 0" euler="0 0 -135" size="0.035 0.022 0.02" mass="0.11" material="soporte"/>
+      <geom type="cylinder" pos="-0.3536 -0.3536 0.037" size="0.023 0.017" mass="0.171" material="motor"/>
+      <geom class="visual" type="box" pos="-0.3536 -0.3536 0.057" euler="0 0 -60" size="0.203 0.017 0.0015" mass="0.04" material="carbono"/>
+
+      <!-- Puntos donde empuja cada hélice (su eje z apunta hacia arriba del dron) -->
+      <site name="m1" pos=" 0.3536 -0.3536 0.057"/>
+      <site name="m2" pos="-0.3536  0.3536 0.057"/>
+      <site name="m3" pos=" 0.3536  0.3536 0.057"/>
+      <site name="m4" pos="-0.3536 -0.3536 0.057"/>
+
+      <!-- Cámara mirando hacia abajo (la de los blancos de SUAS), justo debajo de la placa de abajo.
+           En MuJoCo la cámara mira hacia su -z; xyaxes: x de la imagen = derecha del dron,
+           y de la imagen = adelante del dron. -->
+      <camera name="camara_abajo" pos="0 0 -0.128" xyaxes="0 -1 0  1 0 0" fovy="60"/>
+    </body>
+  </worldbody>
+
+
+  <!--
+    Un actuador por motor. ctrl = empuje en newtons (0 a 25.5 N: MN4014 KV330 + hélice 16x5.4 en 6S, tabla de T-Motor).
+    gear = (fuerza x, y, z, torque x, y, z) en el marco del site:
+      - fuerza: 1 × ctrl hacia arriba del dron
+      - torque en z: la reacción de la hélice. Una hélice CCW (vista desde arriba) empuja el cuerpo
+        en sentido horario (z negativo); una CW, al revés. Par/empuje = 0.022 m, calculado con la tabla de T-Motor
+        del MN4014 KV330 + 16x5.4 al 100 %: 377 W × ~85 % de eficiencia = 320 W en el eje, a 5400 rpm (565 rad/s)
+        → par = 320 / 565 = 0.57 N·m, con 25.5 N de empuje → 0.57 / 25.5 = 0.022 m.
+    dyntype="filter": el motor no cambia de golpe. Con hélices de 16" tarda unos 60 ms (motor + ESC).
+  -->
+  <actuator>
+    <general name="m1" site="m1" gear="0 0 1 0 0 -0.022" ctrlrange="0 25.5" dyntype="filter" dynprm="0.06"/>
+    <general name="m2" site="m2" gear="0 0 1 0 0 -0.022" ctrlrange="0 25.5" dyntype="filter" dynprm="0.06"/>
+    <general name="m3" site="m3" gear="0 0 1 0 0  0.022" ctrlrange="0 25.5" dyntype="filter" dynprm="0.06"/>
+    <general name="m4" site="m4" gear="0 0 1 0 0  0.022" ctrlrange="0 25.5" dyntype="filter" dynprm="0.06"/>
+  </actuator>
+
+  <!-- Sensores en el site "imu" (marco del cuerpo, FLU) -->
+  <sensor>
+    <gyro name="giro" site="imu"/>
+    <accelerometer name="acel" site="imu"/>
+    <framelinvel name="vel" objtype="site" objname="imu"/>
+  </sensor>
+</mujoco>

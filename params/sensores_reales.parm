@@ -1,0 +1,16 @@
+# Ruido de los sensores, como en un dron real (los agrega ArduPilot SITL; el viento y el error horizontal del GPS
+# los agrega el puente: robocol_suas/sim/perturbaciones.py). Sin este archivo, SITL entrega sensores casi perfectos.
+#
+# IMU (2 acelerómetros y 2 giroscopios). Con los motores encendidos, SITL suma este ruido; en un dron real buena
+# parte es vibración de motores y hélices. Valores de un dron bien armado (con amortiguadores para la Pixhawk):
+SIM_ACC1_RND 0.6
+SIM_ACC2_RND 0.6
+# giroscopio: SITL lo multiplica por el acelerador (~0.45 en vuelo): ~1.3 °/s de ruido
+SIM_GYR1_RND 3.0
+SIM_GYR2_RND 3.0
+# Barómetro: ±0.4 m de ruido (el de SITL por defecto es 0.2)
+SIM_BARO_RND 0.4
+# GPS: error de altura que va y viene (amplitud 0.8 m) y llega con 100 ms de retraso a 5 Hz (como un GPS u-blox M8/M9)
+SIM_GPS_NOISE 0.8
+SIM_GPS_LAG_MS 100
+SIM_GPS_HZ 5

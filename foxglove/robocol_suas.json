@@ -1,0 +1,201 @@
+{
+  "configById": {
+    "3D!dron": {
+      "followTf": "dron",
+      "followMode": "follow-position",
+      "cameraState": {
+        "distance": 6,
+        "perspective": true,
+        "phi": 60,
+        "thetaOffset": 45,
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.01,
+        "far": 5000
+      },
+      "scene": {
+        "transforms": {
+          "labelSize": 0.1,
+          "axisScale": 0.5
+        }
+      },
+      "transforms": {},
+      "topics": {
+        "/escena/dron": {
+          "visible": true
+        },
+        "/escena/trayectoria": {
+          "visible": true
+        },
+        "/escena/campo": {
+          "visible": true
+        },
+        "/escena/blancos": {
+          "visible": true
+        }
+      },
+      "layers": {
+        "suelo": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Suelo (cuadros de 5 m)",
+          "instanceId": "suelo",
+          "layerId": "foxglove.Grid",
+          "frameId": "mundo",
+          "size": 200,
+          "divisions": 40,
+          "lineWidth": 1,
+          "color": "#4a7a3a",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose"
+      },
+      "imageMode": {}
+    },
+    "Image!camara": {
+      "imageMode": {
+        "imageTopic": "/camara/imagen",
+        "calibrationTopic": "/camara/calibracion"
+      },
+      "cameraState": {},
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {},
+      "layers": {},
+      "publish": {}
+    },
+    "map!mapa": {
+      "layer": "satellite",
+      "followTopic": "/gps",
+      "zoomLevel": 19,
+      "disabledTopics": [],
+      "topicColors": {
+        "/gps": "#ffbf00",
+        "/campo": "#ff3333"
+      }
+    },
+    "Plot!altura": {
+      "title": "Altura y actitud",
+      "paths": [
+        {
+          "value": "/estado.altura_m",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "altura (m)"
+        },
+        {
+          "value": "/estado.actitud_grados.alabeo",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "alabeo (°)"
+        },
+        {
+          "value": "/estado.actitud_grados.cabeceo",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "cabeceo (°)"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 30
+    },
+    "Plot!motores": {
+      "title": "Empuje de los motores (N)",
+      "paths": [
+        {
+          "value": "/estado.empuje_N[0]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "m1"
+        },
+        {
+          "value": "/estado.empuje_N[1]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "m2"
+        },
+        {
+          "value": "/estado.empuje_N[2]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "m3"
+        },
+        {
+          "value": "/estado.empuje_N[3]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "m4"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 30
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "splitPercentage": 55,
+    "first": "3D!dron",
+    "second": {
+      "direction": "column",
+      "splitPercentage": 66,
+      "first": {
+        "direction": "row",
+        "splitPercentage": 50,
+        "first": "Image!camara",
+        "second": "map!mapa"
+      },
+      "second": {
+        "direction": "row",
+        "splitPercentage": 50,
+        "first": "Plot!altura",
+        "second": "Plot!motores"
+      }
+    }
+  }
+}

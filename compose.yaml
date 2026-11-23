@@ -1,0 +1,18 @@
+# Entorno de desarrollo.
+#   docker compose up -d --build        # construir y arrancar (la primera vez tarda: compila ArduPilot)
+#   docker compose exec suas bash       # abrir una terminal dentro
+#   docker compose down                 # parar
+services:
+  suas:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: robocol_suas:dev
+    init: true
+    volumes:
+      - .:/ws                  # el repo: se edita fuera y se ejecuta dentro
+    ports:
+      # Foxglove: ws://localhost:8765. Si el 8765 ya está ocupado (otro foxglove_bridge):
+      #   FOXGLOVE_PUERTO=8766 docker compose up -d   → ws://localhost:8766
+      - "${FOXGLOVE_PUERTO:-8765}:8765"
+      - "5762:5762"            # MAVLink de SITL (SERIAL1) para una estación de tierra: QGroundControl / Mission Planner

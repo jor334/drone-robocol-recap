@@ -1,0 +1,21 @@
+# Geocerca con las reglas de SUAS 2026. Se carga después de robocol_quad.parm.
+#
+# Reglamento (3.0.4): dentro del polígono del límite de vuelo y entre 150 y 400 ft sobre el suelo.
+# Salirse termina la misión, así que ArduPilot lo vigila por su cuenta, aunque falle el código de la misión.
+# El polígono NO va aquí: se sube por MAVLink (robocol_suas/campo/geocerca.py; scripts/simular.sh lo hace solo).
+#
+# Activada desde el arranque
+FENCE_ENABLE 1
+# Tipos (se suman): 1 = techo de altura, 4 = polígono, 8 = piso de altura → 13
+FENCE_TYPE 13
+# Techo: 400 ft = 121.9 m. Se deja 120 m.
+FENCE_ALT_MAX 120
+# Piso: 150 ft = 45.7 m. Se deja 47 m. El piso se activa solo cuando el dron sube por encima de 49 m
+# (piso + margen) y ArduCopter lo ignora mientras aterriza: así se puede despegar y aterrizar.
+FENCE_ALT_MIN 47
+# Distancia de seguridad al borde (m)
+FENCE_MARGIN 2
+# Qué hacer al salirse: 1 = volver al home (RTL) y, si no puede, aterrizar
+FENCE_ACTION 1
+# El RTL vuelve a 50 m (5000 cm), por encima de los 150 ft del reglamento (el valor por defecto es 15 m)
+RTL_ALT 5000

@@ -1,0 +1,27 @@
+# Parámetros de ArduCopter para el quad de Robocol en simulación.
+# Se cargan DESPUÉS de Tools/autotest/default_params/copter.parm (los de aquí ganan).
+#
+# Quad en X, como el dron real
+FRAME_CLASS 1
+FRAME_TYPE 1
+# Motores: PWM 1000-2000 (es lo que el puente de MuJoCo convierte en empuje)
+MOT_PWM_MIN 1000
+MOT_PWM_MAX 2000
+MOT_THST_EXPO 0.65
+# Empuje para mantenerse en el aire: el peso del modelo (4.54 kg × 9.81 = 44.6 N) entre el empuje máximo
+# (4 × 25.5 N, MN4014 KV330 + 16x5.4 en 6S). La masa es estimada (ver quadcopter.xml).
+# ArduPilot lo afina solo en vuelo (MOT_HOVER_LEARN).
+MOT_THST_HOVER 0.44
+#
+# Guiñada (girar sobre el eje vertical). Los valores por defecto son para drones pequeños: con 1 m y 4.5 kg el
+# controlador pedía hasta 270°/s² de aceleración de giro, el dron no podía darla, se pasaba y quedaba oscilando
+# (±20°/s, 20 s después de un giro de 90°). Probado en SITL (2026-11-02):
+#   por defecto (27000, P 0.3, I 0.02, ángulo 4.5) → sigue oscilando ±18°/s a los 10 s
+#   estos valores                                   → quieto (0°/s) a los 10 s, en ambos sentidos
+# Aceleración máxima de giro: 90°/s² (en centigrados/s²)
+ATC_ACCEL_Y_MAX 9000
+# Lazo de velocidad de giro: más ganancia para mover tanta inercia
+ATC_RAT_YAW_P 1.0
+ATC_RAT_YAW_I 0.1
+# Lazo de ángulo de giro: un poco más suave
+ATC_ANG_YAW_P 3.0

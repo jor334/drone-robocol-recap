@@ -1,0 +1,138 @@
+<!--
+  Blancos de SUAS 2026 ("Search, Detect, and Deliver", Team Handbook 3.6.2):
+
+    "One mannequin and one tent will be scattered amongst other debris around the Search Boundary.
+     The tent will be in its open state and of the pop-up variant. The mannequin may be positioned in any
+     orientation and will be surrounded/covered by surrounding features such as bushes/trees/vehicles."
+
+  Es una PLANTILLA: campo/escena.py copia estas piezas a la escena de MuJoCo y pone cada objeto donde dice
+  POSICIONES_BLANCOS en campo/rustyponds.py. Los pos/euler de aquí no se usan.
+
+  Todo está hecho con formas simples de MuJoCo (cápsulas, cajas, esferas, elipsoides). Sirve para probar la cadena
+  completa (ver → ubicar → soltar), pero un YOLO entrenado con fotos reales puede no reconocerlos igual de bien.
+
+  Son cuerpos sin articulación: están fijos en el suelo (pero las cargas lanzadas sí chocarán con ellos).
+-->
+<mujoco>
+  <asset>
+    <!-- Follaje: verde con puntos al azar más claros y más oscuros (hojas al sol y huecos), para que los arbustos
+         no se vean como pelotas lisas -->
+    <texture name="follaje" type="2d" builtin="flat" mark="random" random="0.35" width="24" height="24"
+             rgb1="0.20 0.31 0.12" rgb2="0.20 0.31 0.12" markrgb="0.36 0.48 0.20"/>
+    <material name="follaje" texture="follaje" texrepeat="3 3" specular="0" shininess="0"/>
+    <texture name="follaje_oscuro" type="2d" builtin="flat" mark="random" random="0.4" width="24" height="24"
+             rgb1="0.13 0.22 0.09" rgb2="0.13 0.22 0.09" markrgb="0.27 0.38 0.15"/>
+    <material name="follaje_oscuro" texture="follaje_oscuro" texrepeat="3 3" specular="0" shininess="0"/>
+    <!-- Pintura de carro (algo de brillo) y vidrios oscuros -->
+    <material name="pintura" rgba="0.36 0.09 0.09 1" specular="0.4" shininess="0.6"/>
+    <material name="vidrio" rgba="0.06 0.07 0.09 1" specular="0.8" shininess="0.9"/>
+    <material name="caucho" rgba="0.04 0.04 0.04 1" specular="0"/>
+    <material name="tela" rgba="0.75 0.15 0.12 1" specular="0"/>
+  </asset>
+
+  <worldbody>
+  <body name="blancos">
+
+    <!-- ===== MANIQUÍ: acostado boca arriba, cabeza hacia +x local, girado 30°. Mide ~1.8 m ===== -->
+    <body name="maniqui" pos="326.0 15.0 0" euler="0 0 30">
+      <!-- tronco (camisa roja), cadera y piernas (jean), cabeza, cuello y manos (piel), zapatos -->
+      <geom name="maniqui_tronco" type="capsule" fromto="-0.05 0 0.14  0.42 0 0.14" size="0.15" rgba="0.75 0.15 0.12 1"/>
+      <geom type="capsule" fromto="-0.15 -0.09 0.12  -0.15 0.09 0.12" size="0.12" rgba="0.2 0.27 0.45 1"/>
+      <geom type="capsule" fromto="-0.2  0.10 0.08  -1.0  0.14 0.075" size="0.075" rgba="0.2 0.27 0.45 1"/>
+      <geom type="capsule" fromto="-0.2 -0.10 0.08  -1.0 -0.14 0.075" size="0.075" rgba="0.2 0.27 0.45 1"/>
+      <geom type="box" pos="-1.07  0.14 0.08" size="0.06 0.05 0.05" rgba="0.1 0.08 0.07 1"/>
+      <geom type="box" pos="-1.07 -0.14 0.08" size="0.06 0.05 0.05" rgba="0.1 0.08 0.07 1"/>
+      <geom type="capsule" fromto="0.45 0 0.12  0.55 0 0.12" size="0.05" rgba="0.85 0.68 0.55 1"/>
+      <geom name="maniqui_cabeza" type="sphere" pos="0.66 0 0.11" size="0.105" rgba="0.85 0.68 0.55 1"/>
+      <!-- brazos a los lados del cuerpo -->
+      <geom type="capsule" fromto="0.38  0.21 0.11  -0.12  0.30 0.06" size="0.05" rgba="0.75 0.15 0.12 1"/>
+      <geom type="capsule" fromto="0.38 -0.21 0.11  -0.12 -0.30 0.06" size="0.05" rgba="0.75 0.15 0.12 1"/>
+      <geom type="sphere" pos="-0.18  0.31 0.05" size="0.045" rgba="0.85 0.68 0.55 1"/>
+      <geom type="sphere" pos="-0.18 -0.31 0.05" size="0.045" rgba="0.85 0.68 0.55 1"/>
+      <!-- arbusto que le tapa los pies (vista desde arriba): varias bolas de follaje juntas -->
+      <geom type="ellipsoid" pos="-1.35 0.45 0.35" size="0.55 0.5 0.45" material="follaje"/>
+      <geom type="ellipsoid" pos="-1.0 0.85 0.3" size="0.45 0.4 0.35" euler="0 0 30" material="follaje_oscuro"/>
+      <geom type="ellipsoid" pos="-1.75 0.1 0.25" size="0.4 0.35 0.3" material="follaje_oscuro"/>
+      <geom type="ellipsoid" pos="-1.5 0.95 0.2" size="0.3 0.3 0.25" material="follaje"/>
+    </body>
+
+    <!-- Carro estacionado al lado del maniquí (~5 m): sedán de 4.6 × 1.8 m, rojo oscuro -->
+    <body name="carro" pos="321.0 9.5 0" euler="0 0 20">
+      <!-- carrocería: parte baja, capó (adelante, +x) y maletero, un poco más bajos que la cabina -->
+      <geom type="box" pos="0 0 0.52" size="2.3 0.9 0.24" material="pintura"/>
+      <geom type="box" pos="1.55 0 0.8" size="0.75 0.86 0.05" euler="0 -4 0" material="pintura"/>
+      <geom type="box" pos="-1.75 0 0.82" size="0.55 0.86 0.06" material="pintura"/>
+      <!-- cabina: vidrios oscuros alrededor y techo del color del carro -->
+      <geom type="box" pos="-0.15 0 1.04" size="1.1 0.82 0.28" material="vidrio"/>
+      <geom type="box" pos="-0.2 0 1.33" size="0.78 0.76 0.03" material="pintura"/>
+      <!-- espejos -->
+      <geom type="box" pos="0.75  0.95 1.0" size="0.08 0.1 0.05" material="pintura"/>
+      <geom type="box" pos="0.75 -0.95 1.0" size="0.08 0.1 0.05" material="pintura"/>
+      <!-- llantas (asoman un poco por los lados) -->
+      <geom type="cylinder" pos=" 1.4  0.82 0.33" euler="90 0 0" size="0.33 0.11" material="caucho"/>
+      <geom type="cylinder" pos=" 1.4 -0.82 0.33" euler="90 0 0" size="0.33 0.11" material="caucho"/>
+      <geom type="cylinder" pos="-1.4  0.82 0.33" euler="90 0 0" size="0.33 0.11" material="caucho"/>
+      <geom type="cylinder" pos="-1.4 -0.82 0.33" euler="90 0 0" size="0.33 0.11" material="caucho"/>
+    </body>
+    <!-- Otro arbusto al otro lado del maniquí -->
+    <body name="arbusto" pos="328.5 13.0 0">
+      <geom type="ellipsoid" pos="0 0 0.5" size="0.9 0.8 0.6" material="follaje_oscuro"/>
+      <geom type="ellipsoid" pos="0.6 0.5 0.4" size="0.6 0.55 0.45" material="follaje"/>
+      <geom type="ellipsoid" pos="-0.5 0.6 0.35" size="0.5 0.45 0.4" material="follaje"/>
+    </body>
+
+    <!-- ===== TIENDA POP-UP (abierta): cúpula de ~2.1 m de lado y 1.15 m de alto ===== -->
+    <body name="tienda" pos="290.0 75.0 0" euler="0 0 15">
+      <!-- medio elipsoide: el centro está en el suelo, así que solo se ve la mitad de arriba -->
+      <geom name="tienda_cupula" type="ellipsoid" pos="0 0 0" size="1.05 1.05 1.15" rgba="0.12 0.35 0.70 1"/>
+      <!-- costuras de las varillas (se ven desde arriba como una X) y ventilación en el techo -->
+      <geom type="box" pos="0 0 1.1" euler="0 0 45" size="0.75 0.02 0.06" rgba="0.08 0.2 0.4 1"/>
+      <geom type="box" pos="0 0 1.1" euler="0 0 -45" size="0.75 0.02 0.06" rgba="0.08 0.2 0.4 1"/>
+      <geom type="cylinder" pos="0 0 1.16" size="0.16 0.015" rgba="0.3 0.3 0.32 1"/>
+      <!-- puerta abierta (más oscura) -->
+      <geom type="ellipsoid" pos="0.95 0 0.35" size="0.12 0.42 0.4" rgba="0.05 0.08 0.12 1"/>
+    </body>
+
+    <!-- ===== Basura de distracción ("other debris") ===== -->
+    <!-- llanta tirada -->
+    <body name="llanta" pos="270.0 30.0 0">
+      <geom type="cylinder" pos="0 0 0.11" size="0.33 0.11" rgba="0.05 0.05 0.05 1"/>
+      <geom type="cylinder" pos="0 0 0.115" size="0.17 0.11" rgba="0.3 0.3 0.3 1"/>
+    </body>
+    <!-- cono de tránsito -->
+    <body name="cono" pos="355.0 60.0 0">
+      <geom type="box" pos="0 0 0.015" size="0.19 0.19 0.015" rgba="0.95 0.4 0.05 1"/>
+      <geom type="cylinder" pos="0 0 0.14" size="0.15 0.11" rgba="0.95 0.4 0.05 1"/>
+      <geom type="cylinder" pos="0 0 0.36" size="0.11 0.11" rgba="0.95 0.4 0.05 1"/>
+      <geom type="cylinder" pos="0 0 0.45" size="0.1 0.03" rgba="0.95 0.95 0.95 1"/>
+      <geom type="cylinder" pos="0 0 0.56" size="0.07 0.09" rgba="0.95 0.4 0.05 1"/>
+    </body>
+    <!-- caneca de basura -->
+    <body name="caneca" pos="305.0 -30.0 0">
+      <geom type="cylinder" pos="0 0 0.45" size="0.3 0.45" rgba="0.1 0.3 0.15 1"/>
+      <geom type="cylinder" pos="0 0 0.92" size="0.32 0.02" rgba="0.08 0.22 0.1 1"/>
+    </body>
+    <!-- balón de baloncesto -->
+    <body name="balon" pos="280.0 -60.0 0">
+      <geom type="sphere" pos="0 0 0.12" size="0.12" rgba="0.85 0.35 0.08 1"/>
+    </body>
+    <!-- cajas de cartón -->
+    <body name="cajas" pos="340.0 110.0 0" euler="0 0 25">
+      <geom type="box" pos="0 0 0.2" size="0.3 0.25 0.2" rgba="0.6 0.45 0.28 1"/>
+      <geom type="box" pos="0.7 0.3 0.25" euler="0 0 30" size="0.25 0.25 0.25" rgba="0.55 0.42 0.26 1"/>
+    </body>
+    <!-- bicicleta tirada en el suelo -->
+    <body name="bicicleta" pos="265.0 120.0 0" euler="0 0 -40">
+      <geom type="cylinder" pos=" 0.52 0 0.03" size="0.34 0.015" rgba="0.08 0.08 0.08 1"/>
+      <geom type="cylinder" pos="-0.52 0 0.03" size="0.34 0.015" rgba="0.08 0.08 0.08 1"/>
+      <geom type="capsule" fromto="-0.52 0 0.06  0.0 0 0.06" size="0.02" rgba="0.1 0.5 0.7 1"/>
+      <geom type="capsule" fromto=" 0.0 0 0.06  0.45 0 0.06" size="0.02" rgba="0.1 0.5 0.7 1"/>
+      <geom type="capsule" fromto=" 0.45 -0.22 0.08  0.45 0.22 0.08" size="0.015" rgba="0.15 0.15 0.15 1"/>
+    </body>
+    <!-- lona naranja doblada: un rectángulo de color que se puede confundir con la tienda -->
+    <body name="lona" pos="360.0 -70.0 0" euler="0 0 40">
+      <geom type="box" pos="0 0 0.02" size="1.5 1.0 0.02" rgba="0.9 0.45 0.1 1"/>
+    </body>
+  </body>
+  </worldbody>
+</mujoco>

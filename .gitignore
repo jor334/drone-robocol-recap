@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+MUJOCO_LOG.TXT
+# lo que se descarga o se genera: fotos del suelo, escena de MuJoCo, logs de ArduPilot SITL
+datos/
+# carpeta vieja de logs de ArduPilot (ahora van en datos/sitl)
+sitl/
+.DS_Store

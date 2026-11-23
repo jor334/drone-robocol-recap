@@ -1,0 +1,12 @@
+# Dependencias de Python del proyecto (versiones fijas para que todos tengan lo mismo)
+mujoco==3.17.0
+numpy==2.4.6
+foxglove-sdk==0.30.3
+opencv-python-headless==4.14.0.94
+pyopengl==3.1.10        # MuJoCo lo usa para renderizar la cámara sin ventana (OSMesa)
+# DroneKit 2.9.2 es la última versión (2019). Necesita "future" y un parche para Python >= 3.10
+# (ver robocol_suas/mision/dronekit_compat.py).
+dronekit==2.9.2
+future==1.0.0
+pymavlink==2.4.50
+pytest
