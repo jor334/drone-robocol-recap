@@ -1,5 +1,8 @@
 # Robocol SUAS 2026: the drone, recreated in simulation
 
+> 📖 **Extended documentation:** [portfolio project page](https://portafolio-tau-indol-76.vercel.app/en/proyectos/robocol)
+> ([en español](https://portafolio-tau-indol-76.vercel.app/es/proyectos/robocol))
+
 A simulation of the quadcopter that team **Robocol** built for the **SUAS 2026** competition (Student Unmanned Aerial
 Systems), running the same flight software the real drone would use: **ArduPilot** as the autopilot, missions in
 **Python (DroneKit)** and physics in **MuJoCo**. The drone flies with wind, noisy sensors and a camera that sees real
