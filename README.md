@@ -2,10 +2,10 @@
 
 <p align="center">
   <a href="https://portafolio-tau-indol-76.vercel.app/en/proyectos/robocol">
-    <img src="https://img.shields.io/badge/Extended%20documentation-Portfolio-1f6feb?style=for-the-badge" alt="Extended documentation (portfolio)">
+    <img src="https://img.shields.io/badge/Extended%20documentation-English-1f6feb?style=for-the-badge" alt="Extended documentation (English)">
   </a>
   <a href="https://portafolio-tau-indol-76.vercel.app/es/proyectos/robocol">
-    <img src="https://img.shields.io/badge/Documentaci%C3%B3n-Espa%C3%B1ol-6e7781?style=for-the-badge" alt="Documentación en español">
+    <img src="https://img.shields.io/badge/Documentaci%C3%B3n%20extendida-Espa%C3%B1ol-6e7781?style=for-the-badge" alt="Documentación extendida (español)">
   </a>
 </p>
 
