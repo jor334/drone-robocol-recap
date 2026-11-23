@@ -1,7 +1,21 @@
 # Robocol SUAS 2026: the drone, recreated in simulation
 
-> 📖 **Extended documentation:** [portfolio project page](https://portafolio-tau-indol-76.vercel.app/en/proyectos/robocol)
-> ([en español](https://portafolio-tau-indol-76.vercel.app/es/proyectos/robocol))
+<p align="center">
+  <a href="https://portafolio-tau-indol-76.vercel.app/en/proyectos/robocol">
+    <img src="https://img.shields.io/badge/Extended%20documentation-Portfolio-1f6feb?style=for-the-badge" alt="Extended documentation (portfolio)">
+  </a>
+  <a href="https://portafolio-tau-indol-76.vercel.app/es/proyectos/robocol">
+    <img src="https://img.shields.io/badge/Documentaci%C3%B3n-Espa%C3%B1ol-6e7781?style=for-the-badge" alt="Documentación en español">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/ArduPilot-SITL-2e7d32?style=flat-square" alt="ArduPilot SITL">
+  <img src="https://img.shields.io/badge/MuJoCo-physics-0b5394?style=flat-square" alt="MuJoCo">
+  <img src="https://img.shields.io/badge/Python-DroneKit-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python DroneKit">
+  <img src="https://img.shields.io/badge/Docker-Ubuntu%2024.04-2496ed?style=flat-square&logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/Foxglove-ground%20station-6f3be8?style=flat-square" alt="Foxglove">
+</p>
 
 A simulation of the quadcopter that team **Robocol** built for the **SUAS 2026** competition (Student Unmanned Aerial
 Systems), running the same flight software the real drone would use: **ArduPilot** as the autopilot, missions in
